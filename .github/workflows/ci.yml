@@ -1,56 +1,29 @@
-name: Continuous Integration
+name: CI
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-  ci:
+  test:
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          
-      - name: Install dependencies
-        run: npm install
-          
-      - name: Run tests with detailed reporting
-        run: |
-          # Create test results directory
-          mkdir -p test-results
-          # Fix permissions and run tests
-          chmod +x node_modules/.bin/jest 2>/dev/null || echo "No jest binary to fix"
-          npm test 2>&1 | tee test-results/test-output.txt
-        
-      - name: Generate test summary
-        run: |
-          echo "# Test Execution Report" > test-results/test-summary.md
-          echo "## Date: $(date)" >> test-results/test-summary.md
-          echo "## Branch: ${{ github.ref }}" >> test-results/test-summary.md
-          echo "## Commit: ${{ github.sha }}" >> test-results/test-summary.md
-          echo "" >> test-results/test-summary.md
-          echo "### Test Results:" >> test-results/test-summary.md
-          echo "- All tests executed successfully" >> test-results/test-summary.md
-          echo "- No test failures detected" >> test-results/test-summary.md
-          echo "- Test suite completed" >> test-results/test-summary.md
 
-      - name: Build project
-        run: npm run build
-        
-      - name: Upload test reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-reports
-          path: test-results/
-          retention-days: 30
-        
-      - name: Success notification
-        run: echo "CI completed with test reports generated"
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Run tests
+        run: npm test --silent
